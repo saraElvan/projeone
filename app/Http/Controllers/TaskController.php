@@ -2,18 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Task;
 use Illuminate\Http\Request;
 
-class TaskController
+class TaskController extends Controller
 {
-    public function index()
+    // Görev Kullanıcıya mı Ait Kontrolü
+    private function ownedTask(Request $request, Task $task): Task
     {
-        $gorevler = [
-            'Laravel Ortam Kurulumu',
-            'Veritabanı Konfigürasyonu (Migration)',
-            'İlk Rota ve Blade Tasarımı'
-        ];
+        abort_unless((int) $task->user_id === (int) $request->user()->id, 404);
 
-        return view('staj', compact('gorevler'));
+        return $task;
     }
 }
