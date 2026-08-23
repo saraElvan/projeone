@@ -1,62 +1,20 @@
 <?php
-use App\Models\Post;
+
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
-use App\Http\Controllers\TaskController;
-use App\Http\Controllers\PageController;
 
-// 5. Gün: Ana Sayfa (Blade Layout & PageController)
-Route::get('/', [PageController::class, 'home'])->name('home');
-
-// Staj Sayfası
-Route::get('/staj', [TaskController::class, 'index']);
-
-// Dinamik Route Örneği
-Route::get('/gorev/{id}', function ($id) {
-    return "İncelenen Görev ID: " . $id;
+Route::get('/', function () {
+    return view('welcome');
 });
 
-// Form Gönderimi (POST) ve Validation
-Route::post('/gorev-ekle', function (Request $request) {
-    $request->validate([
-        'baslik' => 'required|min:3'
-    ], [
-        'baslik.required' => 'Görev başlığı boş bırakılamaz!',
-        'baslik.min' => 'Görev başlığı en az 3 karakter olmalıdır!'
-    ]);
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
-    return back()->with('mesaj', 'Yeni görev başarıyla eklendi: ' . $request->baslik);
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// İletişim Formu Validation Örneği
-Route::post('/contact', function (Request $request) {
-    $validated = $request->validate([
-        'name' => 'required|min:3',
-        'email' => 'required|email',
-        'message' => 'required|min:10',
-    ]);
-
-    return back()->with('success', 'Mesajınız başarıyla alınmıştır.');
-});
-// 6. Gün: Eloquent CRUD Örnek Rotası
-Route::get('/crud-test', function () {
-    // 1. Create (Veri Ekleme)
-    Post::create([
-        'title' => 'Hello',
-        'body'  => 'First post'
-    ]);
-
-    // 2. Read (Verileri Çekme)
-    $posts = Post::latest()->get();
-
-    // 3. Update (Güncelleme)
-    $singlePost = Post::find(1);
-    if ($singlePost) {
-        $singlePost->update(['title' => 'Updated']);
-    }
-
-    // 4. Delete (Silme)
-    // Post::find(1)?->delete();
-
-    return response()->json($posts);
-});
+require __DIR__.'/auth.php';
