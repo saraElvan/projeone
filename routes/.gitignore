@@ -1,0 +1,10 @@
+/vendor
+/.env
+/node_modules
+/storage/*.key
+/storage/*.log
+/public/storage
+.phpunit.result.cache
+.DS_Store
+Thumbs.db
+VirtualBox VMs
