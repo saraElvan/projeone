@@ -1,20 +1,36 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
+// 1. Ana Karşılama Sayfası (Landing)
+Route::view('/', 'welcome')->name('landing');
+
+// 2. Ziyaretçi Kapısı (Sadece giriş yapmamış kişilere açık)
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.store');
+
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register'])->name('register.store');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
+// 3. Kullanıcı Kapısı (Sadece giriş yapmış kişilere açık)
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-require __DIR__.'/auth.php';
+    // Görev (Task) Yönetimi ve AJAX Bağlantıları
+    Route::get('/tasks/data', [TaskController::class, 'data'])->name('tasks.data');
+    Route::post('/tasks/bulk-action', [TaskController::class, 'bulkAction'])->name('tasks.bulk-action');
+    Route::post('/tasks/fill-demo', [TaskController::class, 'fillDemo'])->name('tasks.fill-demo');
+    Route::patch('/tasks/{task}/status', [TaskController::class, 'setStatus'])->name('tasks.status');
+    Route::resource('tasks', TaskController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+
+    // Hesap (Account) Yönetimi
+    Route::get('/account', [AccountController::class, 'edit'])->name('account.edit');
+    Route::put('/account/profile', [AccountController::class, 'updateProfile'])->name('account.profile');
+    Route::put('/account/password', [AccountController::class, 'updatePassword'])->name('account.password');
+    Route::delete('/account', [AccountController::class, 'destroy'])->name('account.destroy');
+});
