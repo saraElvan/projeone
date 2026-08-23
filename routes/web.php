@@ -1,5 +1,5 @@
 <?php
-
+use App\Models\Post;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\TaskController;
@@ -37,4 +37,26 @@ Route::post('/contact', function (Request $request) {
     ]);
 
     return back()->with('success', 'Mesajınız başarıyla alınmıştır.');
+});
+// 6. Gün: Eloquent CRUD Örnek Rotası
+Route::get('/crud-test', function () {
+    // 1. Create (Veri Ekleme)
+    Post::create([
+        'title' => 'Hello',
+        'body'  => 'First post'
+    ]);
+
+    // 2. Read (Verileri Çekme)
+    $posts = Post::latest()->get();
+
+    // 3. Update (Güncelleme)
+    $singlePost = Post::find(1);
+    if ($singlePost) {
+        $singlePost->update(['title' => 'Updated']);
+    }
+
+    // 4. Delete (Silme)
+    // Post::find(1)?->delete();
+
+    return response()->json($posts);
 });
