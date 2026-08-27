@@ -1,72 +1,81 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card p-3 text-center">Tüm Görevler: <span id="count-all" class="fw-bold">{{ $counts['all'] ?? 0 }}</span></div>
-    </div>
-    <div class="col-md-4">
-        <div class="card p-3 text-center">Bekleyenler: <span id="count-pending" class="fw-bold">{{ $counts['pending'] ?? 0 }}</span></div>
-    </div>
-    <div class="col-md-4">
-        <div class="card p-3 text-center">Tamamlananlar: <span id="count-done" class="fw-bold">{{ $counts['done'] ?? 0 }}</span></div>
-    </div>
-</div>
-
-<div class="card p-3 mb-4">
-    <form id="filter-form" class="row g-2">
-        <input type="hidden" name="status" id="filter-status" value="">
-        <div class="col-md-6">
-            <input type="text" name="search" class="form-control" placeholder="Görevlerde ara...">
+<div class="container py-4">
+    <!-- Flash Messages -->
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-        <div class="col-md-6 text-end">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTaskModal">+ Yeni Görev</button>
+    @endif
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Görev Paneli</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTaskModal">
+            Yeni Görev Ekle
+        </button>
+    </div>
+
+    <!-- Toast Bildirimi -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="liveToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toastMessage">
+                    İşlem başarılı.
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
         </div>
-    </form>
+    </div>
+
+    <!-- Görev Listesi Tablosu -->
+    <div id="tasksTableContainer">
+        @include('tasks.partials.table')
+    </div>
 </div>
 
-<div id="tasks-content">
-    @include('tasks.partials.table')
-</div>
-
-<!-- Create Task Modal -->
+<!-- Create Modal -->
 <div class="modal fade" id="createTaskModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form id="create-task-form" action="{{ route('tasks.store') }}" method="POST">
+            <div class="modal-header">
+                <h5 class="modal-title">Yeni Görev</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createTaskForm">
                 @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title">Yeni Görev Oluştur</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
                 <div class="modal-body">
-                    <div id="create-error-box" class="alert alert-danger d-none"></div>
+                    <div id="createErrorBox" class="alert alert-danger d-none"></div>
+
                     <div class="mb-3">
                         <label class="form-label">Başlık</label>
-                        <input type="text" name="title" class="form-control">
+                        <input type="text" name="title" class="form-control" required>
                     </div>
+
                     <div class="mb-3">
                         <label class="form-label">Açıklama</label>
                         <textarea name="description" class="form-control"></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Öncelik</label>
-                        <select name="priority" class="form-select">
-                            <option value="low">Düşük</option>
-                            <option value="medium" selected>Orta</option>
-                            <option value="high">Yüksek</option>
-                        </select>
-                    </div>
+
                     <div class="mb-3">
                         <label class="form-label">Durum</label>
-                        <select name="status" class="form-select">
-                            <option value="pending" selected>Bekliyor</option>
-                            <option value="done">Tamamlandı</option>
+                        <select name="status" class="form-select" required>
+                            <option value="pending">Beklemede (Pending)</option>
+                            <option value="done">Tamamlandı (Done)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Öncelik (Priority)</label>
+                        <select name="priority" class="form-select" required>
+                            <option value="low">Düşük (Low)</option>
+                            <option value="medium" selected>Orta (Medium)</option>
+                            <option value="high">Yüksek (High)</option>
                         </select>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
                     <button type="submit" class="btn btn-primary">Kaydet</button>
                 </div>
             </form>
@@ -74,76 +83,116 @@
     </div>
 </div>
 
+<!-- Edit Modal -->
+<div class="modal fade" id="editTaskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Görev Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editTaskForm">
+                @csrf
+                @method('PUT')
+                <input type="hidden" id="editTaskId" name="id">
+                <div class="modal-body">
+                    <div id="editErrorBox" class="alert alert-danger d-none"></div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Başlık</label>
+                        <input type="text" id="editTitle" name="title" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Açıklama</label>
+                        <textarea id="editDescription" name="description" class="form-control"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Durum</label>
+                        <select id="editStatus" name="status" class="form-select" required>
+                            <option value="pending">Beklemede (Pending)</option>
+                            <option value="done">Tamamlandı (Done)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Öncelik (Priority)</label>
+                        <select id="editPriority" name="priority" class="form-select" required>
+                            <option value="low">Düşük (Low)</option>
+                            <option value="medium">Orta (Medium)</option>
+                            <option value="high">Yüksek (High)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Güncelle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
-function showToast(message) {
-    Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: 'success',
-        title: message,
-        showConfirmButton: false,
-        timer: 3000
-    });
-}
+document.addEventListener('DOMContentLoaded', function () {
+    const createModal = new bootstrap.Modal(document.getElementById('createTaskModal'));
+    const editModal = new bootstrap.Modal(document.getElementById('editTaskModal'));
+    const toastEl = document.getElementById('liveToast');
+    const toast = new bootstrap.Toast(toastEl);
 
-async function fetchTasks(options = {}) {
-    const form = document.getElementById('filter-form');
-    const params = new URLSearchParams(new FormData(form));
-    const response = await fetch(`{{ route('tasks.data') }}?${params.toString()}`, {
-        headers: { 'Accept': 'application/json' }
-    });
-    const payload = await response.json();
-    document.getElementById('tasks-content').innerHTML = payload.html;
-}
-
-// Form Gönderimi ve 422 Validation Yönetimi
-document.getElementById('create-task-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const form = e.target;
-    const errorBox = document.getElementById('create-error-box');
-    errorBox.classList.add('d-none');
-    errorBox.innerHTML = '';
-
-    const response = await fetch(form.action, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'Accept': 'application/json'
-        },
-        body: new FormData(form)
-    });
-
-    const payload = await response.json();
-
-    if (response.status === 422) {
-        errorBox.innerHTML = Object.values(payload.errors || {}).flat().map(e => `<div>${e}</div>`).join('');
-        errorBox.classList.remove('d-none');
-        return;
+    function showToast(message) {
+        document.getElementById('toastMessage').innerText = message;
+        toast.show();
     }
 
-    const modal = bootstrap.Modal.getInstance(document.getElementById('createTaskModal'));
-    modal.hide();
-    showToast(payload.message || 'Görev başarıyla eklendi.');
-    await fetchTasks();
-    form.reset();
-});
+    async function fetchTasks() {
+        const response = await fetch('/tasks', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const html = await response.text();
+        document.getElementById('tasksTableContainer').innerHTML = html;
+    }
 
-document.addEventListener('click', async function(e) {
-    if (e.target.classList.contains('delete-btn')) {
-        const result = await Swal.fire({ title: 'Silmek istediğinize emin misiniz?', icon: 'warning', showCancelButton: true });
-        if (result.isConfirmed) {
-            const response = await fetch(e.target.dataset.url, {
-                method: 'DELETE',
-                headers: { 
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+    // CREATE TASK AJAX
+    document.getElementById('createTaskForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const form = e.target;
+        const errorBox = document.getElementById('createErrorBox');
+        errorBox.classList.add('d-none');
+
+        const formData = new FormData(form);
+
+        try {
+            const response = await fetch('/tasks', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'
                 }
             });
-            const payload = await response.json();
-            showToast(payload.message || 'Görev silindi.');
-            await fetchTasks();
+
+            if (response.status === 422) {
+                const payload = await response.json();
+                errorBox.innerHTML = Object.values(payload.errors || {}).flat()
+                    .map((err) => `<div>${err}</div>`).join('');
+                errorBox.classList.remove('d-none');
+                return;
+            }
+
+            if (response.ok) {
+                createModal.hide();
+                showToast('Görev başarıyla eklendi.');
+                await fetchTasks();
+                form.reset();
+            } else {
+                // AJAX değil de düz Redirect döndüyse sayfayı yenile
+                window.location.reload();
+            }
+        } catch (err) {
+            window.location.reload();
         }
-    }
+    });
 });
 </script>
 @endsection

@@ -1,59 +1,66 @@
-@extends('layouts.app')
-
-@section('content')
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card p-3 text-center">Tüm Görevler: <span id="count-all" class="fw-bold">{{ $counts['all'] ?? 0 }}</span></div>
-    </div>
-    <div class="col-md-4">
-        <div class="card p-3 text-center">Bekleyenler: <span id="count-pending" class="fw-bold">{{ $counts['pending'] ?? 0 }}</span></div>
-    </div>
-    <div class="col-md-4">
-        <div class="card p-3 text-center">Tamamlananlar: <span id="count-done" class="fw-bold">{{ $counts['done'] ?? 0 }}</span></div>
-    </div>
+<div class="table-responsive">
+    <table class="table table-hover align-middle bg-white rounded shadow-sm">
+        <thead class="table-light">
+            <tr>
+                <th>Durum</th>
+                <th>Başlık</th>
+                <th>Açıklama</th>
+                <th>Öncelik</th>
+                <th class="text-end">İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($tasks as $task)
+                <tr>
+                    <td>
+                        <span class="badge {{ $task->status === 'done' ? 'bg-success' : 'bg-warning text-dark' }}">
+                            {{ $task->status === 'done' ? 'Tamamlandı' : 'Bekliyor' }}
+                        </span>
+                    </td>
+                    <td class="fw-semibold">
+                        <a href="{{ route('tasks.show', $task) }}" class="text-decoration-none text-dark">
+                            {{ $task->title }}
+                        </a>
+                    </td>
+                    <td class="text-muted">{{ Str::limit($task->description, 50) }}</td>
+                    <td>
+                        @if($task->priority === 'high')
+                            <span class="badge bg-danger">Yüksek</span>
+                        @elseif($task->priority === 'medium')
+                            <span class="badge bg-primary">Orta</span>
+                        @else
+                            <span class="badge bg-secondary">Düşük</span>
+                        @endif
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ route('tasks.show', $task) }}" class="btn btn-sm btn-outline-info me-1">
+                            Detay
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger delete-btn" data-url="{{ route('tasks.destroy', $task) }}">
+                            Sil
+                        </button>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">
+                        Aramanızla eşleşen hiçbir görev bulunamadı.
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
 </div>
 
-<div class="card p-3 mb-4">
-    <form id="filter-form" class="row g-2">
-        <input type="hidden" name="status" id="filter-status" value="">
-        <div class="col-md-6">
-            <input type="text" name="search" class="form-control" placeholder="Görevlerde ara...">
-        </div>
-        <div class="col-md-6 text-end">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">+ Yeni Görev</button>
-        </div>
-    </form>
+<!-- Sayfalama (Pagination) Linkleri -->
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div class="text-muted small">
+        Toplam {{ $tasks->total() ?? count($tasks) }} kayıttan 
+        {{ $tasks->firstItem() ?? 1 }} - {{ $tasks->lastItem() ?? count($tasks) }} arası gösteriliyor.
+    </div>
+    <div>
+        @if(method_exists($tasks, 'links'))
+            {{ $tasks->links() }}
+        @endif
+    </div>
 </div>
-
-<div id="tasks-content">
-    @include('tasks.partials.table')
-</div>
-
-<script>
-async function fetchTasks(options = {}) {
-    const form = document.getElementById('filter-form');
-    const params = new URLSearchParams(new FormData(form));
-    const response = await fetch(`{{ route('tasks.data') }}?${params.toString()}`, {
-        headers: { 'Accept': 'application/json' }
-    });
-    const payload = await response.json();
-    document.getElementById('tasks-content').innerHTML = payload.html;
-}
-
-document.addEventListener('click', async function(e) {
-    if (e.target.classList.contains('delete-btn')) {
-        const result = await Swal.fire({ title: 'Silmek istediğine emin misin?', icon: 'warning', showCancelButton: true });
-        if (result.isConfirmed) {
-            await fetch(e.target.dataset.url, {
-                method: 'DELETE',
-                headers: { 
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                }
-            });
-            await fetchTasks();
-        }
-    }
-});
-</script>
-@endsection

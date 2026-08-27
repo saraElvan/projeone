@@ -3,35 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Task Dashboard</title>
+    <title>Staj Projesi - Görev Yönetimi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-light">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse min-vh-100 p-3 text-white">
-                <h4 class="text-center text-white mb-4">Todo Pro</h4>
-                <ul class="nav nav-pills flex-column mb-auto">
-                    <li class="nav-item">
-                        <a href="{{ route('tasks.index') }}" class="nav-link text-white active">Görevler</a>
-                    </li>
-                    <li>
-                        <a href="{{ route('account.edit') }}" class="nav-link text-white">Hesabım</a>
-                    </li>
-                </ul>
-                <hr>
-                <form method="POST" action="{{ route('tasks.fill-demo') }}" class="ajax-action-form" data-success="Demo veriler eklendi.">
-                    @csrf
-                    <button class="btn btn-sm btn-outline-light w-100" type="submit">Fill Tasks</button>
-                </form>
-            </div>
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
-                @yield('content')
-            </main>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{{ route('tasks.index') }}">Görev Paneli</a>
+            @auth
+                <div class="d-flex align-items-center">
+                    <span class="text-white me-3">{{ auth()->user()->name }}</span>
+                    <form action="{{ route('logout') }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-light btn-sm">Çıkış Yap</button>
+                    </form>
+                </div>
+            @endauth
         </div>
+    </nav>
+
+    <div class="container">
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        @if (session('info'))
+            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+                {{ session('info') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        @yield('content')
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -1,3 +1,17 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+.tab-btn {
+    border: 1px solid rgba(18, 36, 42, .12);
+    background: #fff;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-weight: 700;
+    text-decoration: none;
+    color: #333;
+    display: inline-block;
+    transition: all 0.2s ease;
+}
+
+.tab-btn.active {
+    background: #0f766e;
+    color: #fff;
+    border-color: #0f766e;
+}
