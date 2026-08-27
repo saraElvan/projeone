@@ -22,6 +22,8 @@ Route::put('/account/profile', [AuthController::class, 'updateProfile'])->name('
 Route::put('/account/password', [AuthController::class, 'updatePassword'])->name('account.password');
 Route::delete('/account', [AuthController::class, 'destroyAccount'])->name('account.destroy');
 
+// Task Rotaları (AJAX & Standard CRUD)
+Route::get('/tasks/data', [TaskController::class, 'data'])->name('tasks.data');
 Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
 Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
 Route::get('/tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
