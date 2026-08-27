@@ -36,7 +36,10 @@
                         <a href="{{ route('tasks.show', $task) }}" class="btn btn-sm btn-outline-info me-1">
                             Detay
                         </a>
-                        <button class="btn btn-sm btn-outline-danger delete-btn" data-url="{{ route('tasks.destroy', $task) }}">
+                        <!-- Delete Button (AJAX + SweetAlert2 Compatible) -->
+                        <button type="button" 
+                                class="btn btn-sm btn-outline-danger delete-btn" 
+                                data-url="{{ route('tasks.destroy', $task) }}">
                             Sil
                         </button>
                     </td>
@@ -52,8 +55,8 @@
     </table>
 </div>
 
-<!-- Sayfalama (Pagination) Linkleri -->
-<div class="d-flex justify-content-between align-items-center mt-3">
+<!-- Sayfalama (Pagination) -->
+<div id="paginationWrapper" class="d-flex justify-content-between align-items-center mt-3">
     <div class="text-muted small">
         Toplam {{ $tasks->total() ?? count($tasks) }} kayıttan 
         {{ $tasks->firstItem() ?? 1 }} - {{ $tasks->lastItem() ?? count($tasks) }} arası gösteriliyor.

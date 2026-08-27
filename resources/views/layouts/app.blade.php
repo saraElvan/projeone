@@ -3,8 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <title>Staj Projesi - Görev Yönetimi</title>
+    
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS (Sekme Stilleri) -->
+    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-light">
 
@@ -41,6 +51,55 @@
         @yield('content')
     </div>
 
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- SweetAlert2 Silme Mantığı -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('click', async function (e) {
+            const deleteBtn = e.target.closest('.delete-btn');
+            if (deleteBtn) {
+                e.preventDefault();
+                const deleteUrl = deleteBtn.dataset.url;
+
+                const result = await Swal.fire({
+                    title: 'Delete this task?',
+                    text: "You won't be able to undo this.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0f766e',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'Cancel'
+                });
+
+                if (result.isConfirmed) {
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]').content;
+                        const response = await fetch(deleteUrl, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': token,
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({ _method: 'DELETE' })
+                        });
+
+                        if (response.ok) {
+                            Swal.fire('Deleted!', 'Görev silindi.', 'success').then(() => {
+                                window.location.reload();
+                            });
+                        }
+                    } catch (err) {
+                        Swal.fire('Error!', 'Silme işlemi sırasında hata oluştu.', 'error');
+                    }
+                }
+            }
+        });
+    });
+    </script>
 </body>
 </html>
