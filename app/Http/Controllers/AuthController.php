@@ -14,31 +14,30 @@ class AuthController extends Controller
 {
     public function showLogin(): View
     {
-        // Kestirme çözüm: Kullanıcıyı bul/oluştur ve oturumu arka planda aç
-        $user = User::firstOrCreate(
-            ['email' => 'sarah@test.com'],
-            ['name' => 'Sarah', 'password' => Hash::make('sarah1234')]
-        );
-
-        Auth::login($user);
-
         return view('auth.login');
     }
 
     public function login(Request $request): RedirectResponse
     {
+        // 1. Doğrulama (Form Validation)
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
+        ], [
+            'email.required' => 'E-posta alanı boş bırakılamaz.',
+            'email.email' => 'Geçerli bir e-posta adresi giriniz.',
+            'password.required' => 'Şifre alanı boş bırakılamaz.',
         ]);
 
+        // 2. Kimlik Doğrulama Denemesi (Auth::attempt)
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->route('tasks.index');
+            return redirect()->intended(route('tasks.index'))->with('success', 'Giriş başarılı!');
         }
 
+        // 3. Yanlış Giriş Durumu (Session Errors fırlatma)
         return back()->withErrors([
-            'email' => 'E-posta veya şifre hatalı!',
+            'email' => 'Girdiğiniz e-posta veya şifre hatalı!',
         ])->onlyInput('email');
     }
 
@@ -92,7 +91,7 @@ class AuthController extends Controller
         ]);
 
         $user->update($data);
-        return back()->with('success', 'Profile updated successfully.');
+        return back()->with('success', 'Profil başarıyla güncellendi.');
     }
 
     public function updatePassword(Request $request): RedirectResponse
@@ -106,7 +105,7 @@ class AuthController extends Controller
             'password' => Hash::make($data['password']),
         ]);
 
-        return back()->with('success', 'Password updated successfully.');
+        return back()->with('success', 'Şifre başarıyla güncellendi.');
     }
 
     public function destroyAccount(Request $request): RedirectResponse
